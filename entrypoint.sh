@@ -40,7 +40,7 @@ else
   CLUSTER_INFO=" (${CLUSTER})"
 fi
 
-echo "\`kubectl drain ${NODE_NAME}\` will be executed once a termination notice is made."
+echo "\`kubectl taint nodes ${NODE_NAME} spotinstance=terminated:NoExecute\` will be executed once a termination notice is made."
 
 POLL_INTERVAL=${POLL_INTERVAL:-5}
 
@@ -80,9 +80,8 @@ if [ "${SLACK_URL}" != "" ]; then
   curl -X POST --data "payload={\"attachments\":[{\"fallback\":\"$MESSAGE\",\"title\":\":warning: Spot Termination${CLUSTER_INFO}\",\"color\":\"${color}\",\"fields\":[{\"title\":\"Node\",\"value\":\"${NODE_NAME}\",\"short\":false},{\"title\":\"Instance\",\"value\":\"${INSTANCE_ID}\",\"short\":true},{\"title\":\"Availability Zone\",\"value\":\"${AZ}\",\"short\":true}]}]}" ${SLACK_URL}
 fi
 
-# Drain the node.
-# https://kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/#use-kubectl-drain-to-remove-a-node-from-service
-kubectl drain ${NODE_NAME} --force --ignore-daemonsets
+# Taint the node with NoExecute to drain it
+kubectl taint nodes ${NODE_NAME} spotinstance=terminated:NoExecute
 
 # Sleep for 200 seconds to prevent this script from looping.
 # The instance should be terminated by the end of the sleep.
